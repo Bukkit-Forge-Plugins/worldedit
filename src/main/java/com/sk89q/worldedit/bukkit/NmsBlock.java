@@ -26,23 +26,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import net.minecraft.server.NBTBase;
-import net.minecraft.server.NBTTagByte;
-import net.minecraft.server.NBTTagByteArray;
-import net.minecraft.server.NBTTagCompound;
-import net.minecraft.server.NBTTagDouble;
-import net.minecraft.server.NBTTagEnd;
-import net.minecraft.server.NBTTagFloat;
-import net.minecraft.server.NBTTagInt;
-import net.minecraft.server.NBTTagIntArray;
-import net.minecraft.server.NBTTagList;
-import net.minecraft.server.NBTTagLong;
-import net.minecraft.server.NBTTagShort;
-import net.minecraft.server.NBTTagString;
-import net.minecraft.server.TileEntity;
+import net.minecraft.nbt.NBTBase;
+import net.minecraft.nbt.NBTTagByte;
+import net.minecraft.nbt.NBTTagByteArray;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagDouble;
+import net.minecraft.nbt.NBTTagEnd;
+import net.minecraft.nbt.NBTTagFloat;
+import net.minecraft.nbt.NBTTagInt;
+import net.minecraft.nbt.NBTTagIntArray;
+import net.minecraft.nbt.NBTTagList;
+import net.minecraft.nbt.NBTTagLong;
+import net.minecraft.nbt.NBTTagShort;
+import net.minecraft.nbt.NBTTagString;
+import net.minecraft.tileentity.TileEntity;
 
 import org.bukkit.World;
-import org.bukkit.craftbukkit.CraftWorld;
 
 import com.sk89q.jnbt.ByteArrayTag;
 import com.sk89q.jnbt.ByteTag;
@@ -81,7 +80,7 @@ class NmsBlock extends BaseBlock implements TileEntityBlock {
     static {
         Field field;
         try {
-            field = net.minecraft.server.Block.class.getDeclaredField("isTileEntity");
+            field = net.minecraft.block.Block.class.getDeclaredField("isTileEntity");
             field.setAccessible(true);
         } catch (NoSuchFieldException e) {
             logger.severe("Could not find NMS block tile entity field!");
@@ -129,9 +128,9 @@ class NmsBlock extends BaseBlock implements TileEntityBlock {
             return null;
         }
 
-        nbtData.set("x", new NBTTagInt("x", pt.getBlockX()));
-        nbtData.set("y", new NBTTagInt("y", pt.getBlockY()));
-        nbtData.set("z", new NBTTagInt("z", pt.getBlockZ()));
+        nbtData.setTag("x", new NBTTagInt("x", pt.getBlockX()));
+        nbtData.setTag("y", new NBTTagInt("y", pt.getBlockY()));
+        nbtData.setTag("z", new NBTTagInt("z", pt.getBlockZ()));
 
         return nbtData;
     }
@@ -181,12 +180,12 @@ class NmsBlock extends BaseBlock implements TileEntityBlock {
             return null;
         }
 
-        TileEntity te = ((CraftWorld) world).getHandle().getTileEntity(
+        TileEntity te = ((keepcalm.mods.bukkit.bukkitAPI.BukkitWorld) world).getHandle().getBlockTileEntity(
                 position.getBlockX(), position.getBlockY(), position.getBlockZ());
 
         if (te != null) {
             NBTTagCompound tag = new NBTTagCompound();
-            te.b(tag); // Load data
+            te.readFromNBT(tag); // Load data
             return new NmsBlock(type, data, tag);
         }
 
@@ -217,10 +216,10 @@ class NmsBlock extends BaseBlock implements TileEntityBlock {
         }
 
         if (data != null) {
-            TileEntity te = ((CraftWorld) world).getHandle().getTileEntity(
+            TileEntity te = ((keepcalm.mods.bukkit.bukkitAPI.BukkitWorld) world).getHandle().getBlockTileEntity(
                     position.getBlockX(), position.getBlockY(), position.getBlockZ());
             if (te != null) {
-                te.a(data); // Load data
+                te.readFromNBT(data); // Load data
                 return true;
             }
         }
@@ -245,9 +244,9 @@ class NmsBlock extends BaseBlock implements TileEntityBlock {
         int y = position.getBlockY();
         int z = position.getBlockZ();
 
-        CraftWorld craftWorld = ((CraftWorld) world.getWorld());
+        keepcalm.mods.bukkit.bukkitAPI.BukkitWorld craftWorld = ((keepcalm.mods.bukkit.bukkitAPI.BukkitWorld) world.getWorld());
 
-        boolean changed = craftWorld.getHandle().setRawTypeIdAndData(
+        boolean changed = craftWorld.getHandle().setBlockAndMetadata(
                 x, y, z, block.getId(), block.getData());
 
         if (block instanceof BaseBlock) {
@@ -256,9 +255,9 @@ class NmsBlock extends BaseBlock implements TileEntityBlock {
 
         if (changed) {
             if (notifyAdjacent) {
-                craftWorld.getHandle().update(x, y, z, block.getId());
+                craftWorld.getHandle().notifyBlocksOfNeighborChange(x, y, z, block.getId());
             } else {
-                craftWorld.getHandle().notify(x, y, z);
+                craftWorld.getHandle().notifyBlockChange(x, y, z, block.getId());
             }
         }
 
@@ -266,7 +265,7 @@ class NmsBlock extends BaseBlock implements TileEntityBlock {
     }
 
     public static boolean hasTileEntity(int type) {
-        net.minecraft.server.Block nmsBlock = getNmsBlock(type);
+        net.minecraft.block.Block nmsBlock = getNmsBlock(type);
         if (nmsBlock == null) {
             return false;
         }
@@ -278,11 +277,11 @@ class NmsBlock extends BaseBlock implements TileEntityBlock {
         }
     }
 
-    public static net.minecraft.server.Block getNmsBlock(int type) {
-        if (type < 0 || type >= net.minecraft.server.Block.byId.length) {
+    public static net.minecraft.block.Block getNmsBlock(int type) {
+        if (type < 0 || type >= net.minecraft.block.Block.blocksList.length) {
             return null;
         }
-        return net.minecraft.server.Block.byId[type];
+        return net.minecraft.block.Block.blocksList[type];
     }
 
     /**
@@ -304,7 +303,7 @@ class NmsBlock extends BaseBlock implements TileEntityBlock {
             if (compoundMapField == null) {
                 try {
                     // Method name may change!
-                    foreignValues = ((NBTTagCompound) foreign).c();
+                    foreignValues = ((NBTTagCompound) foreign).getTags();
                 } catch (Throwable t) {
                     try {
                         logger.warning("WorldEdit: Couldn't get NBTTagCompound.c(), " +
@@ -339,7 +338,7 @@ class NmsBlock extends BaseBlock implements TileEntityBlock {
             return new ByteTag(foreign.getName(), ((NBTTagByte) foreign).data);
         } else if (foreign instanceof NBTTagByteArray) {
             return new ByteArrayTag(foreign.getName(),
-                    ((NBTTagByteArray) foreign).data);
+                    ((NBTTagByteArray) foreign).byteArray);
         } else if (foreign instanceof NBTTagDouble) {
             return new DoubleTag(foreign.getName(),
                     ((NBTTagDouble) foreign).data);
@@ -349,15 +348,15 @@ class NmsBlock extends BaseBlock implements TileEntityBlock {
             return new IntTag(foreign.getName(), ((NBTTagInt) foreign).data);
         } else if (foreign instanceof NBTTagIntArray) {
             return new IntArrayTag(foreign.getName(),
-                    ((NBTTagIntArray) foreign).data);
+                    ((NBTTagIntArray) foreign).intArray);
         } else if (foreign instanceof NBTTagList) {
             List<Tag> values = new ArrayList<Tag>();
             NBTTagList foreignList = (NBTTagList) foreign;
             int type = NBTConstants.TYPE_BYTE;
-            for (int i = 0; i < foreignList.size(); i++) {
-                NBTBase foreignTag = foreignList.get(i);
+            for (int i = 0; i < foreignList.tagCount()(); i++) {
+                NBTBase foreignTag = foreignList.tagAt(i);
                 values.add(toNative(foreignTag));
-                type = foreignTag.getTypeId();
+                type = foreignTag.getId();
             }
             Class<? extends Tag> cls = NBTConstants.getClassFromType(type);
             return new ListTag(foreign.getName(), cls, values);
@@ -390,7 +389,7 @@ class NmsBlock extends BaseBlock implements TileEntityBlock {
             NBTTagCompound tag = new NBTTagCompound(foreign.getName());
             for (Map.Entry<String, Tag> entry : ((CompoundTag) foreign)
                     .getValue().entrySet()) {
-                tag.set(entry.getKey(), fromNative(entry.getValue()));
+                tag.setTag(entry.getKey(), fromNative(entry.getValue()));
             }
             return tag;
         } else if (foreign instanceof ByteTag) {
@@ -415,7 +414,7 @@ class NmsBlock extends BaseBlock implements TileEntityBlock {
             NBTTagList tag = new NBTTagList(foreign.getName());
             ListTag foreignList = (ListTag) foreign;
             for (Tag t : foreignList.getValue()) {
-                tag.add(fromNative(t));
+                tag.appendTag(fromNative(t));
             }
             return tag;
         } else if (foreign instanceof LongTag) {
