@@ -353,7 +353,7 @@ class NmsBlock extends BaseBlock implements TileEntityBlock {
             List<Tag> values = new ArrayList<Tag>();
             NBTTagList foreignList = (NBTTagList) foreign;
             int type = NBTConstants.TYPE_BYTE;
-            for (int i = 0; i < foreignList.tagCount()(); i++) {
+            for (int i = 0; i < foreignList.tagCount(); i++) {
                 NBTBase foreignTag = foreignList.tagAt(i);
                 values.add(toNative(foreignTag));
                 type = foreignTag.getId();

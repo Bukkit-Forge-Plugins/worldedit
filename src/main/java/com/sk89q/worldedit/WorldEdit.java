@@ -295,6 +295,7 @@ public class WorldEdit {
      * @return The session for the player, if it exists
      */
     public LocalSession getSession(String player) {
+    	System.out.println("Getting session for player " + player + ": " + sessions.get(player) );
         return sessions.get(player);
     }
 
@@ -309,8 +310,10 @@ public class WorldEdit {
 
         synchronized (sessions) {
             if (sessions.containsKey(player.getName())) {
+            	System.out.println("Using existing session for " + player.getName());
                 session = sessions.get(player.getName());
             } else {
+            	System.out.println("Using new session for " + player.getName());
                 session = new LocalSession(config);
                 session.setBlockChangeLimit(config.defaultChangeLimit);
                 // Remember the session
